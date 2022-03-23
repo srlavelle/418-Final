@@ -1,5 +1,6 @@
 # Title: Numbrix Solver
 Samantha Lavelle
+
 Kavya Tummalapalli
 
 ## Summary
@@ -15,19 +16,19 @@ Kavya Tummalapalli
 
 
 ## Goals and Deliverables
-# 100%
+100%
 Achieve an accurate, working Numbrix solver with 8x speedup for a 64 (8 x 8) grid. This speedup is chosen as a benchmark because it is substantial, and we feel that we can attain it with thorough parallelization. The puzzle, in theory, could be parallelized over every square in the grid; what will prevent this is the existence of false paths during solving. Thus, 8x seems a reasonable speedup. An 8 x 8 grid is used as our benchmark because it is the standard size of the game; we plan to work up to this board size after we get a solution working with a smaller board. 
 Our program will additionally provide a visual reprentation of the input and output boards. This will be printed in the calling terminal with the addition of the -v flag.
 To prove our solution is accurate, we will also create a checker program that ensures the board produced is a valid solution.
 
-# 125%
+125%
 If we have more time, we will implement a solution that works not only for square/rectangular boards, but also irregularly shaped boards. These boards provide a higher level of complexity when solving, likely adding time to our routing algorithm.
 It would also be cool to produce a visual representation of the input and output boards that is more stylized, with different colors for numbers that were originally on the board versus those that our program added. This can be done with a java or python script, like WireGrapher from assignment 3.
 
-# 75%
+75%
 In the event that we are not able to meet all of our goals, we would at least like to have a fully working solution that attains 4x speedup. The solution must still be accurate, as proven by our checker program.
 
-# Deliverables
+Deliverables
 At the poster section, we will show our program solving 8x8 grids in real time, displaying the visual representations of the input and output and checking with our script. We will display speedup graphs for different board sizes and numbers of threads/cores/processors, and justify these results. We also can bring printed versions of the puzzle so students can try it out for themselves to better understand the work our program is doing!
 
 ## Platform Choice
