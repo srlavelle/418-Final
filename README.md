@@ -1,19 +1,27 @@
 # Title: Numbrix Solver
-Samantha Lavelle
-
-Kavya Tummalapalli
+Samantha Lavelle & Kavya Tummalapalli
 
 ## Summary
-
+We are going to implement and parallelize an algorithm to solve Numbrix puzzles. We will complete performance analyses on different optimizations of our algorithm on varying sizes and difficulties of puzzles. 
 
 ## Background
+Numbrix is a grid based logic puzzle in which we are trying to create a consecutive path of numbers 1-n^2 (for an n x n grid) using only horizontal and vertical lines. Some numbers of the grid will already be given as clues to the overall path and the player must use these clues to fill in the rest of the grid.
 
+Similar to games like Sudoku, some clues will need to be considered before others to lead to the correct overall solution or other times there may be no clue that gives away a number for sure, and in these cases we must proceed using assumptions. In the cases the player considers a wrong clue or assumption and runs into an unreachable or unfeasible solution, they have to backtrack to what parts of the grid are known to be 100% correct. This is also where parallelism can come into play as if there are many clues and possible paths, we can consider multiple solutions at once.
+
+This game has three factors affecting difficulty and speed. The first is the size of grid. Larger grids have more numbers that must be placed and thus will generally take longer to solve than smaller puzzles. Second, the amount of revealed numbers plays a huge role in the difficulty as though each puzzle has a single solution, a 100 number path that has 50 numbers given will generally be easier for both a human and computer to solve than one with 10 numbers given.
 
 ## The Challenge
+As this is a lesser known game than some other popular number and logic puzzles such as Sudoku, we will not have as many resources to work with. Though we will have help with our sequential version, we will have to think about what methods of parallelization will lead most effective and which parts of our algorithm will be most susceptible to parallelization.
 
+In terms of the puzzle itself, this can scale to be very large in size as even a simple 10 x 10 grid can have thousands of arrangements of the numbers. This can become a problem as we are considering how we want to parallelize our algorithm as there could be too many paths and turns we must consider (think about having unlimited bends as opposed to the max 2 bends for the Assignment 3 and 4 wires).
+
+Another aspect of our optimizations that we must consider is the data storing and communicating. We must consider how we are going to store the data we already know about the grid so that multiple threads or processes can work with this grid if they are all working on the same space. Otherwise, we must consider how to share data among threads and processes if we are working with independent areas of the grid and successfully fill in more numbers in a specific section of the grid.
+
+A third possible challenge would be possible workload imbalance based on what our method of parallelization is. We must work to figure out what work or computations will be done in parallel and how we should divide up these computations to not repeatedly go after the same clues or to consider more plausible clues versus those with hundreds of possible paths.
 
 ## Resources
-
+There is an existing sequential C++ Numbrix solver at https://rosettacode.org/wiki/Solve_a_Numbrix_puzzle that we will base our starting algorithm on. We haven't found any information or research about parallelizations of the Numbrix solver algorithm or any similar algorithms but we will continue looking for relevant resources to allow us to compare our algorithm and speedups with existing solvers or parallelism methods.
 
 ## Goals and Deliverables
 100%
