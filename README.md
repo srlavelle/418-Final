@@ -1,4 +1,4 @@
-# Title: Numbrix Solver
+# Numbrix Solver
 Samantha Lavelle & Kavya Tummalapalli
 
 ## Summary
