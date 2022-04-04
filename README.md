@@ -49,10 +49,13 @@ As we parallelize our code, we'd like the method of parallelization to allow us 
 
 ## Schedule
 Week of 3/21: Generate project ideas, and choose one. Create and submit project proposal. Assignment 4 is due this week, so most time will be dedicated to completing it.
+UPDATE: Completed all above tasks.
 
 Week of 3/28: Create and code sequential algorithm. Create checker script and use to check algorithm's accuracy, and print a rough visual representation to the terminal to visually check the results. 
+UPDATE: During this week, I did not know if Kavya was still an enrolled student in the class. I met with the professor, but no progress was made as there was no communication.
 
 Week of 4/4: Research which method of parallelization would best suit the program, and think about what barriers/calls will be needed. Begin to implement parallelization, monitoring speedup tradeoffs and bottlenecks. Prepare project checkpoint, due the following Monday.
+UPDATE: I assume Kavya has dropped based on her last message (and lack of communication after). I will look into other topics that I will be able to complete alone. Obviously very behind at this point.
 
 Week of 4/11: Turn in project checkpoint, due on 4/11. Coninue parallelization. Exam 2 is this week, so time will be dedicated to taking and studying for the exam.
 
