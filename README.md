@@ -58,9 +58,15 @@ Week of 4/4: Research which method of parallelization would best suit the progra
 UPDATE: I assume Kavya has dropped based on her last message (and lack of communication after). I will look into other topics that I will be able to complete alone. Obviously very behind at this point.
 
 Week of 4/11: Turn in project checkpoint, due on 4/11. Coninue parallelization. Exam 2 is this week, so time will be dedicated to taking and studying for the exam.
+UPDATE: I literally got Covid, since there weren't enough hiccups in the schedule I guess. I was able to lock in Numbrix as the project topic going forward, and create the milestone report. I have a plan to start work, whenever I feel well enough.
 
 Week of 4/18: Finish parallelization, and tweak to achieve optimal speedup. Compare effects of synchronization, load balancing, etc. Determine bottleneck.
 
 Week of 4/25: Prepare project report, due on Friday 4/29. Explore any last avenues of parallelization, and hopefully get to 125% goals.
 
 Week of 5/2: Parallelism Competition is on Thursday, May 5. Create and polish speedup graphs and visuals for the presentation, and rehearse what we will say. Any last-minute visual representations can be created in the beginning of the week.
+
+
+## Milestone
+This project hit a lot of hiccups in the beginning - not hearing anything from my partner, trying to get in touch with and get info from professors, and getting very sick for a week. At this point, I have a plan of how to proceed and am eager to do so once I feel well enough to do work. I will read and understand the sequential version of the Numbrix solver, and then parallelize it using threads. I have done some preliminary research and narrowed my options to using pthreads, or OpenMP or Cilk, which themselves use pthreads. I'm leaning towards using pthreads, but if the code seems like it will lend itself well to OpenMP, that may be a good option since I have experience with it.
+Right now, my goal is simply to parallelize the code and note speedup, reasoning about any tradeoffs and displaying my results graphically. I'm really behind because of everything that has happened, so I know I need to focus on the basics and do more if I find myself with additional time at the end of the project. It is my hope and expectation that I will have a quality presentation for the poster session.
