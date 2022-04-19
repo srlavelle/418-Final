@@ -1,3 +1,5 @@
+// This code adapted from https://rosettacode.org/wiki/Solve_a_Numbrix_puzzle#C.2B.2B
+
 #include <vector>
 #include <sstream>
 #include <iostream>
