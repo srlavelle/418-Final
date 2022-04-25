@@ -14,4 +14,4 @@ $(APP_NAME): $(OBJS)
 	$(CXX) $< $(CXXFLAGS) -c -o $@
 
 clean:
-  /bin/rm -rf *~ *.o $(APP_NAME) *.class
+	/bin/rm -rf *~ *.o $(APP_NAME) *.class
