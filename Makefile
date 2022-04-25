@@ -3,7 +3,7 @@ APP_NAME=numbrix
 OBJS=numbrix.o
 
 CXX = g++ -m64 -std=c++11
-CXXFLAGS = -I. -O3 -Wall -fopenmp -Wno-unknown-pragmas
+CXXFLAGS = -I. -O3 -Wall
 
 default: $(APP_NAME)
 
