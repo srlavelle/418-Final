@@ -1,6 +1,6 @@
-APP_NAME=numbrix
+APP_NAME=numbrix_main
 
-OBJS=numbrix.o
+OBJS=numbrix_main.o
 
 CXX = g++ -m64 -std=c++11
 CXXFLAGS = -I. -O3 -Wall
