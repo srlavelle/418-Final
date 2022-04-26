@@ -1,5 +1,5 @@
 # Numbrix Solver
-Samantha Lavelle & Kavya Tummalapalli
+Samantha Lavelle
 
 ## Summary
 We are going to implement and parallelize an algorithm to solve Numbrix puzzles. We will complete performance analyses on different optimizations of our algorithm on varying sizes and difficulties of puzzles. 
@@ -59,10 +59,13 @@ UPDATE: I assume Kavya has dropped based on her last message (and lack of commun
 
 Week of 4/11: Turn in project checkpoint, due on 4/11. Coninue parallelization. Exam 2 is this week, so time will be dedicated to taking and studying for the exam.
 UPDATE: I literally got Covid, since there weren't enough hiccups in the schedule I guess. I was able to lock in Numbrix as the project topic going forward, and create the milestone report. I have a plan to start work, whenever I feel well enough.
+I started looking into different methods of parallelization, and narrowed it down to OpenMP or using pthreads directly. OpenMP is simpler to implement, and I just used it for assignment 3, while pthreads might give some more control while launching new threads and rejoining them.
 
 Week of 4/18: Finish parallelization, and tweak to achieve optimal speedup. Compare effects of synchronization, load balancing, etc. Determine bottleneck.
+UPDATE: I studied the existing sequential solution so that I understand exactly how the algorithm works, and how to parallelize it. I had to research how classes are created and used in C++, as they appear a lot in the code, but I've only ever worked with classes in Python. I then created a Makefile for the file, and made sure everything runs as it should.
 
 Week of 4/25: Prepare project report, due on Friday 4/29. Explore any last avenues of parallelization, and hopefully get to 125% goals.
+UPDATE: I ran the code with different inputs, testing the accuracy visually. I'm not sure that I'll end up making a checker file since the boards are so easy to check with a quick visual inspection. I cleaned up the code, which had some weird... design choices. I then made it so that the unsolved board and solved board are printed with good formatting. I added timing code and more boards, testing the program with both larger and smaller boards. Even on a 9x9, the solver is really quick: only ~0.15 ms. The largest board I could find is 15x15, which did increase the computation time to ~0.5 ms, but I worry that the overhead of just adding OpenMP/pthreads will outweigh this, throwing off speedup values. Things did always run slower on PSC, so maybe that'll be to my advantage.
 
 Week of 5/2: Parallelism Competition is on Thursday, May 5. Create and polish speedup graphs and visuals for the presentation, and rehearse what we will say. Any last-minute visual representations can be created in the beginning of the week.
 
