@@ -9,6 +9,9 @@
 #include <bitset>
 #include <chrono>
 
+//#include <pthread.h>
+#include <omp.h>
+
 using namespace std;
 typedef bitset<4> hood_t;
 
@@ -22,7 +25,7 @@ class nSolver
 {
 public:
 
-	void solve(vector<string>& puzz, int max_wid)
+	void solve(vector<string>& puzz, int max_wid, int num_threads)
 	{
 		if (puzz.size() < 1) return;
 		wid = max_wid;
@@ -40,7 +43,7 @@ public:
 			c++;
 		}
 
-		solveIt(); // does the solving
+		solveIt(num_threads); // does the solving
         c = 0;
 		for (auto&& s : puzz) // fill in all the unknowns from the solution in arr
 		{
@@ -51,12 +54,123 @@ public:
 	}
 
 private:
-	bool search(int x, int y, int w, int dr)
+
+    // this version of search contains code that parallelizes solving.
+    bool search(int x, int y, int w, int dr, int num_threads)
 	{
-		if ((w > max && dr > 0) || (w < 1 && dr < 0) || (w == max && weHave[w])) return true;
+        if ((w > max && dr > 0) || (w < 1 && dr < 0) || (w == max && weHave[w])) {
+            //printf("Puzzle Complete!\n");
+            return true;
+        }
 
 		node& n = arr[x + y * wid];
-		n.neighbors = getNeighbors(x, y);
+		n.neighbors = getNeighbors(x, y, num_threads);
+
+        bool* is_open_spot = (bool*)malloc(4 * sizeof(bool));
+        int* a = (int*)malloc(4 * sizeof(int));
+        int* b = (int*)malloc(4 * sizeof(int));
+        bool* next_value_found = (bool*)malloc(4 * sizeof(bool));
+
+        if (weHave[w])
+		{
+		    //begin parallel section
+            omp_set_num_threads(num_threads);
+            #pragma omp parallel for shared(next_value_found, a, b) schedule(dynamic)
+            for (int d = 0; d < 4; d++)
+			{
+                a[d] = x + dx[d];
+                b[d] = y + dy[d];
+				if (n.neighbors[d] && arr[a[d] + b[d] * wid].val == w)
+				{
+                    next_value_found[d] = true;
+				}
+                else
+                {
+                    next_value_found[d] = false;
+                }
+			} // end parallel section
+
+            for (int d = 0; d < 4; d++)
+            {
+                if (next_value_found[d] && search(a[d], b[d], w + dr, dr, num_threads))
+                {
+
+                    free(next_value_found);
+                    free(is_open_spot);
+                    free(a);
+                    free(b);
+
+                    return true;
+                }
+            }
+
+        free(next_value_found);
+        free(is_open_spot);
+        free(a);
+        free(b);
+
+		return false;
+		}
+
+        // w is not already in the puzzle
+
+
+        // begin parallel section
+        omp_set_num_threads(num_threads);
+        #pragma omp parallel for shared(is_open_spot, a, b) schedule(dynamic)
+        for (int d = 0; d < 4; d++)
+        {
+            a[d] = x + dx[d];
+            b[d] = y + dy[d];
+			if (n.neighbors[d] && arr[a[d] + b[d] * wid].val == 0) {
+                is_open_spot[d] = true;
+                //printf("true sent\n");
+            }
+            else {
+                is_open_spot[d] = false; }
+
+        } // end parallel section
+
+        for (int d = 0; d < 4; d++)
+        {
+            if (is_open_spot[d] == true)
+            {
+                //printf("true recvd\n");
+			    arr[a[d] + b[d] * wid].val = w;
+			    if (search(a[d], b[d], w + dr, dr, num_threads)) {
+				    free(is_open_spot);
+                    free(a);
+                    free(b);
+                    return true;
+                }
+			    arr[a[d] + b[d] * wid].val = 0;
+            }
+		}
+
+        free(next_value_found);
+        free(is_open_spot);
+        free(a);
+        free(b);
+
+		return false;
+	}
+
+
+    bool old_search(int x, int y, int w, int dr)
+	{
+		/*
+        bool done = false;
+        if ((w > max) || (w == max && weHave[w])) {
+            // puzzle is complete!
+            done = true;
+            cout << "DONE\n";
+        }
+        */
+
+        if ((w > max && dr > 0) || (w < 1 && dr < 0) || (w == max && weHave[w])) return true;
+
+		node& n = arr[x + y * wid];
+		n.neighbors = getNeighbors(x, y, 1);
 		if (weHave[w])
 		{
 			for (int d = 0; d < 4; d++)
@@ -65,7 +179,8 @@ private:
 				{
 					int a = x + dx[d], b = y + dy[d];
 					if (arr[a + b * wid].val == w)
-						if (search(a, b, w + dr, dr))
+						if (old_search(a, b, w + dr, dr))
+
 							return true;
 				}
 			}
@@ -80,7 +195,7 @@ private:
 				if (arr[a + b * wid].val == 0)
 				{
 					arr[a + b * wid].val = w;
-					if (search(a, b, w + dr, dr))
+					if (old_search(a, b, w + dr, dr))
 						return true;
 					arr[a + b * wid].val = 0;
 				}
@@ -89,27 +204,52 @@ private:
 		return false;
 	}
 
-	hood_t getNeighbors(int x, int y)
+	hood_t getNeighbors(int x, int y, int num_threads)
 	{
 		hood_t retval;
+        int a;
+        int b;
+        bool* valid = (bool*)malloc(4 * sizeof(bool));
+        bool out_of_bounds;
+
+        // begin parallel section
+        omp_set_num_threads(num_threads);
+        #pragma omp parallel for shared(valid) private(a, b, out_of_bounds) schedule(dynamic)
 		for (int xx = 0; xx < 4; xx++)
 		{
-			int a = x + dx[xx], b = y + dy[xx];
-			if (a < 0 || b < 0 || a >= wid || b >= hei) // if out of bounds of grid
-				continue;
-			if (arr[a + b * wid].val > -1)
-				retval.set(xx);
-		}
-		return retval;
+			a = x + dx[xx];
+            b = y + dy[xx];
+			out_of_bounds = (a < 0 || b < 0 || a >= wid || b >= hei); // if out of bounds of grid
+				//continue;
+			if (!out_of_bounds && arr[a + b * wid].val > -1)
+            {
+				//retval.set(xx);
+                valid[xx] = true;
+            }
+            else
+            {
+                valid[xx] = false;
+            }
+		} // end parallel section
+
+
+        for (int xx = 0; xx < 4; xx++)
+        {
+            retval[xx] = valid[xx];
+        }
+
+        free(valid);
+
+        return retval;
 	}
 
-	void solveIt()
+	void solveIt(int num_threads)
 	{
 		int x, y, z;
         findStart(x, y, z); // set x & y to coords of lowest value. z holds this value
 		if (z == 99999) { cout << "\nCan't find start point!\n"; return; }
-		search(x, y, z + 1, 1); // recursively finds all numbers > z
-		if (z > 1) search(x, y, z - 1, -1); // recursively finds all numbers < z
+		search(x, y, z + 1, 1, num_threads); // recursively finds all numbers > z
+		//if (z > 1) search(x, y, z - 1, -1, num_threads); // recursively finds all numbers < z
 	}
 
     // goes through all values in puzzle to find lowest value.
@@ -142,6 +282,7 @@ int main(int argc, char* argv[])
     typedef std::chrono::high_resolution_clock Clock;
     typedef std::chrono::duration<double> dsec;
 
+    int num_threads = 4; //TODO make commandline var
 	int wid;
     string p;
     string p1;
@@ -239,7 +380,7 @@ int main(int argc, char* argv[])
     auto compute_start = Clock::now();
     double compute_time = 0;
 
-    s.solve(puzz, wid);
+    s.solve(puzz, wid, num_threads);
     // end time
     compute_time += duration_cast<dsec>(Clock::now() - compute_start).count();
 
