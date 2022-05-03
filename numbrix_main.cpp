@@ -159,7 +159,7 @@ private:
 	}
 
     // search function with parallelized recursion, executed via tasks
-    bool task_search(int x, int y, int w, int dr, int num_threads, vector<node> local_arr, int depth)
+    bool task_search(int x, int y, int w, int dr, vector<node> local_arr, int depth)
 	{
 
         if ((w > max && dr > 0) || (w < 1 && dr < 0) || (w == max && weHave[w]))
@@ -182,7 +182,7 @@ private:
 				{
 					int a = x + dx[d], b = y + dy[d];
 					if (local_arr[a + b * wid].val == w)
-						if (task_search(a, b, w + dr, dr, num_threads, local_arr, depth+1))
+						if (task_search(a, b, w + dr, dr, local_arr, depth+1))
 
 							return true;
 				}
@@ -190,12 +190,15 @@ private:
 			return false;
 		}
 
-        int* result = (int*)malloc(4 * sizeof(int));
+        int res = 0;
         bool valid_path = false;
 		for (int d = 0; d < 4; d++)
 		{
-            #pragma omp task shared(n, result) private(valid_path) firstprivate(local_arr)
+            omp_set_nested(1);
+            #pragma omp task shared(n, res) private(valid_path) firstprivate(local_arr)
             {
+                //if (w == 2)
+                //    printf("##### %d #####\n", omp_get_thread_num());
 			    if (n.neighbors[d])
 			    {
 				    int a = x + dx[d], b = y + dy[d];
@@ -205,20 +208,15 @@ private:
 				        local_arr[a + b * wid].val = w;
 
                         if (depth < 8) {
-                            valid_path = task_search(a, b, w + dr, dr, num_threads, local_arr, depth+1); }
+                            valid_path = task_search(a, b, w + dr, dr, local_arr, depth+1); }
                         else {
-                            valid_path = old_search(a, b, w + dr, dr, num_threads, local_arr); }
+                            valid_path = old_search(a, b, w + dr, dr, local_arr); }
 
 
 					    if (valid_path) {
 						    //return true;
                             //break;
-                            result[d] = w;
-                            // flag is set
-                        }
-                        else {
-					        //local_arr[a + b * wid].val = 0;
-                            result[d] = 0;
+                            res = d;
                         }
 				    }
 			    }
@@ -226,19 +224,18 @@ private:
 		}
         #pragma omp taskwait
 
-        for (int d = 0; d < 4; d++) {
-            if (result[d] != 0) {
-            	int a = x + dx[d], b = y + dy[d];
-                local_arr[a + b * wid].val = w;
-                return true;
-            }
+
+        if (res != 0) {
+            int a = x + dx[res], b = y + dy[res];
+            local_arr[a + b * wid].val = w;
+            return true;
         }
 
 		return false;
 	}
 
     // original, non-parallelized search function
-    bool old_search(int x, int y, int w, int dr, int num_threads, vector<node> local_arr)
+    bool old_search(int x, int y, int w, int dr, vector<node> local_arr)
 	{
 
         if ((w > max && dr > 0) || (w < 1 && dr < 0) || (w == max && weHave[w])) // return true;
@@ -262,7 +259,7 @@ private:
 				{
 					int a = x + dx[d], b = y + dy[d];
 					if (local_arr[a + b * wid].val == w)
-						if (old_search(a, b, w + dr, dr, num_threads, local_arr))
+						if (old_search(a, b, w + dr, dr, local_arr))
 
 							return true;
 				}
@@ -278,7 +275,7 @@ private:
 				if (local_arr[a + b * wid].val == 0)
 				{
 					local_arr[a + b * wid].val = w;
-					if (old_search(a, b, w + dr, dr, num_threads, local_arr))
+					if (old_search(a, b, w + dr, dr, local_arr))
 						return true;
 					local_arr[a + b * wid].val = 0;
 				}
@@ -324,7 +321,7 @@ private:
         #pragma omp parallel
         #pragma omp single
         {
-        task_search(x, y, z + 1, 1, num_threads, arr, 0);
+        task_search(x, y, z + 1, 1, arr, 0);
         }
 
         //search(x, y, z + 1, 1, num_threads); // recursively finds all numbers > z
@@ -362,7 +359,7 @@ int main(int argc, char* argv[])
     typedef std::chrono::duration<double> dsec;
 
 
-    int num_threads;
+    int num_threads = 1; //default
     int opt;
     while ((opt = getopt(argc, argv, "t:")) != -1) {
         switch (opt) {
@@ -372,7 +369,6 @@ int main(int argc, char* argv[])
         }
     }
 
-    //int num_threads = 4; //TODO make commandline var
 	int wid;
     string p;
     string p1;
@@ -380,6 +376,7 @@ int main(int argc, char* argv[])
     string p3;
     string p4;
     string p5;
+    string p6;
 
 
 	p1 =".  .  .  .  .  .  .  .  . \
@@ -439,10 +436,13 @@ int main(int argc, char* argv[])
         136 135   .   .   .   .   . 109   .   .   .   .   . 179 178 \
         137 138   .   . 145   .   .   .   .   . 153   .   . 176 177"; int wid5 = 15;
 
+    p6 =" 1   . \
+          .   3"; int wid6 = 2;
+
 
     // choose puzzle to solve
-    p = p4; // maybe make command-line arg later
-    wid = wid4;
+    p = p2; // maybe make command-line arg later
+    wid = wid2;
 
     istringstream iss(p);
     vector<string> puzz;
