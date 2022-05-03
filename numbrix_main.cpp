@@ -194,20 +194,19 @@ private:
         bool valid_path = false;
 		for (int d = 0; d < 4; d++)
 		{
-            omp_set_nested(1);
-            #pragma omp task shared(n, res) private(valid_path) firstprivate(local_arr)
-            {
-                //if (w == 2)
-                //    printf("##### %d #####\n", omp_get_thread_num());
-			    if (n.neighbors[d])
-			    {
-				    int a = x + dx[d], b = y + dy[d];
-				    if (local_arr[a + b * wid].val == 0)
-				    {
+			if (n.neighbors[d])
+			{
+				int a = x + dx[d], b = y + dy[d];
+				if (local_arr[a + b * wid].val == 0)
+				{
+                    local_arr[a + b * wid].val = w;
 
-				        local_arr[a + b * wid].val = w;
+                    #pragma omp task shared(res) private(valid_path) // firstprivate(local_arr)
+                    {
 
-                        if (depth < 8) {
+				        //local_arr[a + b * wid].val = w;
+
+                        if (depth < 10) {
                             valid_path = task_search(a, b, w + dr, dr, local_arr, depth+1); }
                         else {
                             valid_path = old_search(a, b, w + dr, dr, local_arr); }
@@ -218,9 +217,11 @@ private:
                             //break;
                             res = d;
                         }
-				    }
-			    }
-            }
+                    }
+
+                    local_arr[a + b * wid].val = 0;
+				}
+			}
 		}
         #pragma omp taskwait
 
@@ -441,8 +442,8 @@ int main(int argc, char* argv[])
 
 
     // choose puzzle to solve
-    p = p2; // maybe make command-line arg later
-    wid = wid2;
+    p = p6; // maybe make command-line arg later
+    wid = wid6;
 
     istringstream iss(p);
     vector<string> puzz;
