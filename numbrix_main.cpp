@@ -9,8 +9,8 @@
 #include <bitset>
 #include <chrono>
 
-//#include <pthread.h>
 #include <omp.h>
+#include <getopt.h>
 
 using namespace std;
 typedef bitset<4> hood_t;
@@ -25,6 +25,7 @@ class nSolver
 {
 public:
 
+    // initiates solving; called from main function
 	void solve(vector<string>& puzz, int max_wid, int num_threads)
 	{
 		if (puzz.size() < 1) return;
@@ -55,7 +56,9 @@ public:
 
 private:
 
-    // this version of search contains code that parallelizes solving.
+    // search function that I tried a different method of parallelizing in:
+    // I parallelized the data calculations done before the recursive calls,
+    // but left the recursion itself alone. This also did not yield speedup.
     bool search(int x, int y, int w, int dr, int num_threads)
 	{
         if ((w > max && dr > 0) || (w < 1 && dr < 0) || (w == max && weHave[w])) {
@@ -155,21 +158,21 @@ private:
 		return false;
 	}
 
-
-    bool old_search(int x, int y, int w, int dr)
+    // search function with parallelized recursion, executed via tasks
+    bool task_search(int x, int y, int w, int dr, int num_threads, vector<node> local_arr, int depth)
 	{
-		/*
-        bool done = false;
-        if ((w > max) || (w == max && weHave[w])) {
-            // puzzle is complete!
-            done = true;
-            cout << "DONE\n";
+
+        if ((w > max && dr > 0) || (w < 1 && dr < 0) || (w == max && weHave[w]))
+        {
+            // copy local arr to arr
+            for (int i = 0; i < max; i++) {
+                arr[i] = local_arr[i];
+            }
+
+            return true;
         }
-        */
 
-        if ((w > max && dr > 0) || (w < 1 && dr < 0) || (w == max && weHave[w])) return true;
-
-		node& n = arr[x + y * wid];
+		node& n = local_arr[x + y * wid];
 		n.neighbors = getNeighbors(x, y, 1);
 		if (weHave[w])
 		{
@@ -178,8 +181,88 @@ private:
 				if (n.neighbors[d])
 				{
 					int a = x + dx[d], b = y + dy[d];
-					if (arr[a + b * wid].val == w)
-						if (old_search(a, b, w + dr, dr))
+					if (local_arr[a + b * wid].val == w)
+						if (task_search(a, b, w + dr, dr, num_threads, local_arr, depth+1))
+
+							return true;
+				}
+			}
+			return false;
+		}
+
+        int* result = (int*)malloc(4 * sizeof(int));
+        bool valid_path = false;
+		for (int d = 0; d < 4; d++)
+		{
+            #pragma omp task shared(n, result) private(valid_path) firstprivate(local_arr)
+            {
+			    if (n.neighbors[d])
+			    {
+				    int a = x + dx[d], b = y + dy[d];
+				    if (local_arr[a + b * wid].val == 0)
+				    {
+
+				        local_arr[a + b * wid].val = w;
+
+                        if (depth < 8) {
+                            valid_path = task_search(a, b, w + dr, dr, num_threads, local_arr, depth+1); }
+                        else {
+                            valid_path = old_search(a, b, w + dr, dr, num_threads, local_arr); }
+
+
+					    if (valid_path) {
+						    //return true;
+                            //break;
+                            result[d] = w;
+                            // flag is set
+                        }
+                        else {
+					        //local_arr[a + b * wid].val = 0;
+                            result[d] = 0;
+                        }
+				    }
+			    }
+            }
+		}
+        #pragma omp taskwait
+
+        for (int d = 0; d < 4; d++) {
+            if (result[d] != 0) {
+            	int a = x + dx[d], b = y + dy[d];
+                local_arr[a + b * wid].val = w;
+                return true;
+            }
+        }
+
+		return false;
+	}
+
+    // original, non-parallelized search function
+    bool old_search(int x, int y, int w, int dr, int num_threads, vector<node> local_arr)
+	{
+
+        if ((w > max && dr > 0) || (w < 1 && dr < 0) || (w == max && weHave[w])) // return true;
+        {
+            // copy local arr to arr
+            for (int i = 0; i < max; i++) {
+                arr[i] = local_arr[i];
+            }
+
+            return true;
+        }
+
+
+		node& n = local_arr[x + y * wid];
+		n.neighbors = getNeighbors(x, y, 1);
+		if (weHave[w])
+		{
+			for (int d = 0; d < 4; d++)
+			{
+				if (n.neighbors[d])
+				{
+					int a = x + dx[d], b = y + dy[d];
+					if (local_arr[a + b * wid].val == w)
+						if (old_search(a, b, w + dr, dr, num_threads, local_arr))
 
 							return true;
 				}
@@ -192,63 +275,59 @@ private:
 			if (n.neighbors[d])
 			{
 				int a = x + dx[d], b = y + dy[d];
-				if (arr[a + b * wid].val == 0)
+				if (local_arr[a + b * wid].val == 0)
 				{
-					arr[a + b * wid].val = w;
-					if (old_search(a, b, w + dr, dr))
+					local_arr[a + b * wid].val = w;
+					if (old_search(a, b, w + dr, dr, num_threads, local_arr))
 						return true;
-					arr[a + b * wid].val = 0;
+					local_arr[a + b * wid].val = 0;
 				}
 			}
 		}
 		return false;
 	}
 
+    // determines if the four surrounding spaces are valid spaces on the board.
 	hood_t getNeighbors(int x, int y, int num_threads)
 	{
 		hood_t retval;
         int a;
         int b;
-        bool* valid = (bool*)malloc(4 * sizeof(bool));
         bool out_of_bounds;
 
-        // begin parallel section
-        omp_set_num_threads(num_threads);
-        #pragma omp parallel for shared(valid) private(a, b, out_of_bounds) schedule(dynamic)
 		for (int xx = 0; xx < 4; xx++)
 		{
 			a = x + dx[xx];
             b = y + dy[xx];
 			out_of_bounds = (a < 0 || b < 0 || a >= wid || b >= hei); // if out of bounds of grid
 				//continue;
-			if (!out_of_bounds && arr[a + b * wid].val > -1)
+			if (!out_of_bounds)
             {
-				//retval.set(xx);
-                valid[xx] = true;
+                if (arr[a + b * wid].val > -1)
+                {
+				    retval.set(xx);
+                }
             }
-            else
-            {
-                valid[xx] = false;
-            }
-		} // end parallel section
-
-
-        for (int xx = 0; xx < 4; xx++)
-        {
-            retval[xx] = valid[xx];
-        }
-
-        free(valid);
+		}
 
         return retval;
 	}
 
+    // where the recursive solving function is called from.
 	void solveIt(int num_threads)
 	{
 		int x, y, z;
         findStart(x, y, z); // set x & y to coords of lowest value. z holds this value
 		if (z == 99999) { cout << "\nCan't find start point!\n"; return; }
-		search(x, y, z + 1, 1, num_threads); // recursively finds all numbers > z
+
+        omp_set_num_threads(num_threads);
+        #pragma omp parallel
+        #pragma omp single
+        {
+        task_search(x, y, z + 1, 1, num_threads, arr, 0);
+        }
+
+        //search(x, y, z + 1, 1, num_threads); // recursively finds all numbers > z
 		//if (z > 1) search(x, y, z - 1, -1, num_threads); // recursively finds all numbers < z
 	}
 
@@ -282,7 +361,18 @@ int main(int argc, char* argv[])
     typedef std::chrono::high_resolution_clock Clock;
     typedef std::chrono::duration<double> dsec;
 
-    int num_threads = 4; //TODO make commandline var
+
+    int num_threads;
+    int opt;
+    while ((opt = getopt(argc, argv, "t:")) != -1) {
+        switch (opt) {
+        case 't':
+            num_threads = atoi(optarg);
+            break;
+        }
+    }
+
+    //int num_threads = 4; //TODO make commandline var
 	int wid;
     string p;
     string p1;
@@ -351,8 +441,8 @@ int main(int argc, char* argv[])
 
 
     // choose puzzle to solve
-    p = p1; // maybe make command-line arg later
-    wid = wid1;
+    p = p4; // maybe make command-line arg later
+    wid = wid4;
 
     istringstream iss(p);
     vector<string> puzz;
