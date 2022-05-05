@@ -69,6 +69,7 @@ UPDATE: I ran the code with different inputs, testing the accuracy visually. I'm
 I decided to go with OpenMP, which has functionality that makes parallelizing for loops easy. I've also done some research and found that it can be used with recursive algorithms. I parallelized the data collected before each recursive spawn, but unfortunately the speedup is not enough to offset the overhead of the threads. I'll look into parallelizing the actual recursion more, but there's a lot of things in this code that make this very complicated.
 
 Week of 5/2: Parallelism Competition is on Thursday, May 5. Create and polish speedup graphs and visuals for the presentation, and rehearse what we will say. Any last-minute visual representations can be created in the beginning of the week.
+UPDATE: Made some changes to improve speedup, and began working on the report and video. Did a lot of analysis of code for report, as well as testing on the PSC machines. Submitted deliverables on Thursday.
 
 
 ## Milestone
