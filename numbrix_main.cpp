@@ -62,7 +62,6 @@ private:
     bool search(int x, int y, int w, int dr, int num_threads)
 	{
         if ((w > max && dr > 0) || (w < 1 && dr < 0) || (w == max && weHave[w])) {
-            //printf("Puzzle Complete!\n");
             return true;
         }
 
@@ -117,7 +116,6 @@ private:
 
         // w is not already in the puzzle
 
-
         // begin parallel section
         omp_set_num_threads(num_threads);
         #pragma omp parallel for shared(is_open_spot, a, b) schedule(dynamic)
@@ -127,7 +125,6 @@ private:
             b[d] = y + dy[d];
 			if (n.neighbors[d] && arr[a[d] + b[d] * wid].val == 0) {
                 is_open_spot[d] = true;
-                //printf("true sent\n");
             }
             else {
                 is_open_spot[d] = false; }
@@ -138,7 +135,6 @@ private:
         {
             if (is_open_spot[d] == true)
             {
-                //printf("true recvd\n");
 			    arr[a[d] + b[d] * wid].val = w;
 			    if (search(a[d], b[d], w + dr, dr, num_threads)) {
 				    free(is_open_spot);
@@ -182,7 +178,7 @@ private:
 				{
 					int a = x + dx[d], b = y + dy[d];
 					if (local_arr[a + b * wid].val == w)
-						if (task_search(a, b, w + dr, dr, local_arr, depth+1))
+						if (task_search(a, b, w + dr, dr, local_arr, depth))
 
 							return true;
 				}
@@ -201,11 +197,8 @@ private:
 				{
                     local_arr[a + b * wid].val = w;
 
-                    #pragma omp task shared(res) private(valid_path) // firstprivate(local_arr)
+                    #pragma omp task shared(res) private(valid_path)
                     {
-
-				        //local_arr[a + b * wid].val = w;
-
                         if (depth < 10) {
                             valid_path = task_search(a, b, w + dr, dr, local_arr, depth+1); }
                         else {
@@ -213,8 +206,6 @@ private:
 
 
 					    if (valid_path) {
-						    //return true;
-                            //break;
                             res = d;
                         }
                     }
@@ -223,8 +214,7 @@ private:
 				}
 			}
 		}
-        #pragma omp taskwait
-
+        //#pragma omp taskwait
 
         if (res != 0) {
             int a = x + dx[res], b = y + dy[res];
@@ -298,8 +288,8 @@ private:
 			a = x + dx[xx];
             b = y + dy[xx];
 			out_of_bounds = (a < 0 || b < 0 || a >= wid || b >= hei); // if out of bounds of grid
-				//continue;
-			if (!out_of_bounds)
+
+            if (!out_of_bounds)
             {
                 if (arr[a + b * wid].val > -1)
                 {
@@ -325,8 +315,6 @@ private:
         task_search(x, y, z + 1, 1, arr, 0);
         }
 
-        //search(x, y, z + 1, 1, num_threads); // recursively finds all numbers > z
-		//if (z > 1) search(x, y, z - 1, -1, num_threads); // recursively finds all numbers < z
 	}
 
     // goes through all values in puzzle to find lowest value.
@@ -442,8 +430,8 @@ int main(int argc, char* argv[])
 
 
     // choose puzzle to solve
-    p = p6; // maybe make command-line arg later
-    wid = wid6;
+    p = p5; // maybe make command-line arg later
+    wid = wid5;
 
     istringstream iss(p);
     vector<string> puzz;
